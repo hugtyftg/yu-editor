@@ -14,6 +14,7 @@ export interface UseEditorOptions {
 
 export interface UseEditorReturn {
   editorRef: React.RefObject<HTMLDivElement | null>;
+  editorView: EditorView | null;
 }
 
 export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
@@ -24,6 +25,7 @@ export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
   } = options;
 
   const editorRef = useRef<HTMLDivElement>(null);
+  const editorView = useRef<EditorView | null>(null);
 
   useEffect(() => {
     // 1.初始化yjs实例
@@ -43,28 +45,27 @@ export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
     });
 
     // 4.挂载编辑器
-    let editorView: EditorView | null = null;
     let binding: ProsemirrorBinding | null = null;
 
     if (editorRef.current) {
       // 4.1 定义schema
       // 4.2 基于schema创建editorState
       // 4.3 基于el和editorState创建editorView
-      editorView = setupEditor(
+      editorView.current = setupEditor(
         editorRef.current,
         createEditorState({ provider: wsProvider, type })
       );
       // 4.4 连接editorView和协同服务
       binding = new ProsemirrorBinding(type);
-      binding.initView(editorView);
+      binding.initView(editorView.current);
     }
 
     return () => {
       if (binding) {
         binding.destroy();
       }
-      if (editorView) {
-        editorView.destroy();
+      if (editorView.current) {
+        editorView.current.destroy();
       }
       wsProvider.destroy();
       doc.destroy();
@@ -73,5 +74,6 @@ export function useEditor(options: UseEditorOptions = {}): UseEditorReturn {
 
   return {
     editorRef,
+    editorView: editorView.current,
   };
 }
